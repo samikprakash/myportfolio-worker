@@ -15,8 +15,9 @@ compatibility_date = "2024-08-15"
 # - https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 # Note: Use secrets to store sensitive data.
 # - https://developers.cloudflare.com/workers/configuration/secrets/
-# [vars]
-# MY_VARIABLE = "production_value"
+[vars]
+SUPABASE_PROJECT_URL="https://amgrskkibimhdxiuxune.supabase.co"
+SUPABASE_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtZ3Jza2tpYmltaGR4aXV4dW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQwNjYzMzEsImV4cCI6MjAzOTY0MjMzMX0.fZmQ8a7lC6PnmmTp6SMFnnkvoLTPqyUGry-IdSiUz3U"
 
 # Bind the Workers AI model catalog. Run machine learning models, powered by serverless GPUs, on Cloudflare’s global network
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#workers-ai

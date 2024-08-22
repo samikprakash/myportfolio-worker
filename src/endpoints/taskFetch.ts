@@ -1,81 +1,98 @@
 import { Bool, OpenAPIRoute, Str } from "chanfana";
 import { z } from "zod";
-import { Task } from "../types";
+import { createClient } from "@supabase/supabase-js";
 
-export class TaskFetch extends OpenAPIRoute {
-	schema = {
-		tags: ["Tasks"],
-		summary: "Get a single Task by slug",
-		request: {
-			params: z.object({
-				taskSlug: Str({ description: "Task slug" }),
-			}),
-		},
-		responses: {
-			"200": {
-				description: "Returns a single task if found",
-				content: {
-					"application/json": {
-						schema: z.object({
-							series: z.object({
-								success: Bool(),
-								result: z.object({
-									task: Task,
-								}),
-							}),
-						}),
-					},
-				},
-			},
-			"404": {
-				description: "Task not found",
-				content: {
-					"application/json": {
-						schema: z.object({
-							series: z.object({
-								success: Bool(),
-								error: Str(),
-							}),
-						}),
-					},
-				},
-			},
-		},
-	};
+export class GetPortfolio extends OpenAPIRoute {
+  schema = {
+    tags: ["Tasks"],
+    summary: "Fetch my portflio from the database",
+    request: {},
+    responses: {
+      "200": {
+        description: "Returns my portfolio if found",
+        content: {
+          "application/json": {
+            schema: z.object({
+              series: z.object({
+                success: Bool(),
+                portfolio: z.array(
+                  z
+                    .object({
+                      created_at: z.string(),
+                      id: z.bigint(),
+                      name: z.string().optional(),
+                      quantity: z.number().int().optional(),
+                      symbol: z.string().optional(),
+                    })
+                    .optional()
+                ),
+              }),
+            }),
+          },
+        },
+      },
+      "404": {
+        description: "Portflio not found",
+        content: {
+          "application/json": {
+            schema: z.object({
+              series: z.object({
+                success: Bool(),
+                error: Str(),
+              }),
+            }),
+          },
+        },
+      },
+    },
+  };
 
-	async handle(c) {
-		// Get validated data
-		const data = await this.getValidatedData<typeof this.schema>();
+  async handle(c) {
+    // Get validated data
+    const data = await this.getValidatedData<typeof this.schema>();
+    const api = c.env.SUPABASE_API_KEY;
+    const projetUrl = c.env.SUPABASE_PROJECT_URL;
 
-		// Retrieve the validated slug
-		const { taskSlug } = data.params;
+    const supabase = createClient(projetUrl, api);
 
-		// Implement your own object fetch here
+    const exists = supabase != null || supabase != undefined;
 
-		const exists = true;
+    let { data: portfolio, error } = await supabase
+      .from("portfolio")
+      .select("*");
 
-		// @ts-ignore: check if the object exists
-		if (exists === false) {
-			return Response.json(
-				{
-					success: false,
-					error: "Object not found",
-				},
-				{
-					status: 404,
-				},
-			);
-		}
+    // @ts-ignore: check if the object exists
+    if (exists === false) {
+      return Response.json(
+        {
+          success: false,
+          error: "Object not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
 
-		return {
-			success: true,
-			task: {
-				name: "my task",
-				slug: taskSlug,
-				description: "this needs to be done",
-				completed: false,
-				due_date: new Date().toISOString().slice(0, 10),
-			},
-		};
-	}
+    if (portfolio) {
+      return Response.json(
+        {
+          success: true,
+          portfolio,
+        },
+        {
+          status: 200,
+        }
+      );
+    }
+    return Response.json(
+      {
+        success: false,
+        error: "Portflio not found",
+      },
+      {
+        status: 404,
+      }
+    );
+  }
 }
