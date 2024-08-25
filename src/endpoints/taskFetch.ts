@@ -2,6 +2,25 @@ import { Bool, OpenAPIRoute, Str } from "chanfana";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 
+const getLatestPrice = async (company) => {
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - 7);
+  const finalFromDate = fromDate.toISOString().split("T")[0];
+  const toDate = new Date().toISOString().split("T")[0];
+  const instrument_key = company.upstox_instrument_key;
+  const url = `https://api.upstox.com/v2/historical-candle/${instrument_key}/day/${toDate}/${finalFromDate}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (
+    !data ||
+    !(data as any).data ||
+    !(data as any).data.candles ||
+    !(data as any).data.candles[0]
+  ) {
+    return undefined;
+  }
+  return (data as any).data.candles[0][4];
+};
 export class GetPortfolio extends OpenAPIRoute {
   schema = {
     tags: ["Tasks"],
@@ -75,6 +94,15 @@ export class GetPortfolio extends OpenAPIRoute {
     }
 
     if (portfolio) {
+      const currPrices = await Promise.all(
+        portfolio.map((company) => getLatestPrice(company))
+      );
+      portfolio = portfolio.map((company, index) => {
+        return {
+          ...company,
+          currentPrice: currPrices[index],
+        };
+      });
       return Response.json(
         {
           success: true,
